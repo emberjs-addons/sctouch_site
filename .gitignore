@@ -1,0 +1,11 @@
+*.rbc
+.bundle
+.idea
+.rvmrc
+/coverage
+/pkg
+/rdoc
+/spec/sandbox
+Gemfile.lock
+output
+tmp
