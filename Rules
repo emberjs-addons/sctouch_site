@@ -74,6 +74,9 @@ compile '/stylesheets/*' do
   # don’t filter or layout
 end
 
+compile '/assets/*' do
+end
+
 compile '/images/*' do
 end
 

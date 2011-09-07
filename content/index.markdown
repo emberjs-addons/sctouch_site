@@ -1,242 +1,282 @@
 ---
-title: TransformJS - 3D and 2D Transforms for jQuery
+title: SproutCore Touch - Touch Gesture Support for SproutCore 2.0
 ---
 
-# TransformJS 1.0 Beta
+# SproutCore Touch
 
-### 2D and 3D transforms as regular CSS properties you can set using `.css()` and animate using `.animate()`
+### Multi-touch gestures for SproutCore 2.0 applications
 
 <div id="sections" class="clearfix">
   <div class="section">
-    <h4><a href="http://www.github.com/sproutcore/transformjs/downloads">Download</a></h4>
+    <h4><a href="http://www.github.com/sproutcore/sproutcore-touch/downloads">Download</a></h4>
     <p>
-      Download current and previous versions of TransformJS, feel free
-to fork and/or clone the repository as well. 
+      Clone the github repository, and download the starter-kit: A zip
+file containing everything you need to get started.
     </p>
   </div>
   <div class="section">
-    <h4><a href="http://www.github.com/sproutcore/transformjs/issues">Report Bugs</a></h4>
+    <h4><a href="http://www.github.com/sproutcore/sproutcore-touch/issues">Report Bugs</a></h4>
     <p>
-      TransformJS is currently in beta. If you encounter any odd
+      SproutCore Touch is currently in beta. If you encounter any odd
 behavior or have suggestions for improving the API, please let us know. 
     </p>
   </div>
 </div>
 
+## Table of Contents
+
+<ul id="toc">
+  <li><a href="#demo">Demo</a></li>
+  <li><a href="#overview">Overview</a></li>
+  <li><a href="#usage">Usage</a></li>
+  <li><a href="#customizing-gesture-recognizers">Customizing Gesture Recognizers</a></li>
+  <li><a href="#creating-custom-gesture-recognizers">Creating Custom Gesture Recognizers</a></li>
+  <li><a href="#discrete-vs-continuous-gestures">Discrete vs Continuous Gestures</a></li>
+  <li><a href="#license">License</a></li>
+</ul>
+
 ## Demo
+
+Since the demos only work on a multitouch device, I've opted to record 
+videos instead. If you'd like to play with the demos, please visit 
+[SproutGram Demo](http://sproutgram.strobeapp.com).
+
+#### Pinch
+
+SC.PinchGestureRecognizer waits for two touches to begin on
+the view, then tracks the distance between them, reporting any changes
+through the `scale` property. You can also inspect the velocity property
+to check whether the user was pinching in (positive), or out (negative).
 
 <div id="demobox" class="clearfix">
   <div id="code">
     <javascript>
-      $(document).ready(function() {
-        $('#forward').click(function() {
-          $('#test').animate({
-            translateX:'-=150',
-            translateY:'+=150',
-            scale:'+=2',
-            rotateY: '+='+(2*Math.PI),
-            rotateX: '+='+Math.PI,
-            rotateZ: '+='+Math.PI
-          },1500);    
-        });  
+      MyApp.PinchableView = SC.View.extend({
+        pinchChange: function(recognizer) {    
+          this.$().css('scale',function(index, value) {
+            return recognizer.get('scale') * value
+          });
+        },
 
-        $('#backward').click(function() {
-          $('#test').animate({
-            translateX:'+=150',
-            translateY:'-=150',
-            scale:'-=2',
-            rotateY: '-='+(2*Math.PI),
-            rotateX: '-='+Math.PI,
-            rotateZ: '-='+Math.PI
-          },1500);
-        })
+        pinchEnd: function(recognizer) {
+          var velocity = recognizer.get('velocity');
+          
+          if (velocity >= 0) {
+            this._centerPhoto();
+          }
+          else {
+            this._resetTransforms();
+          }
+        }
       });
     </javascript>
   </div>
   <div id="preview">
-    <button id="forward" class="btn large">Run Animation Forward</button>
-    <button id="backward" class="btn large">Run Animation Back</button>
-    <img id="test" src="images/demo.jpg">
-    <h6>Photo Credit to <a
-href="http://www.flickr.com/photos/mikebehnken/4998169342/">MikeBehnken</a></h6>
+    <iframe class="video" src="http://player.vimeo.com/video/28529523?title=0&amp;byline=0&amp;portrait=0" width="220" height="150" frameborder="0"></iframe>
+    <h6>Pinch Demo</h6>
+  </div>
+</div>
+
+  ---
+
+#### Pan
+
+SC.PanGestureRecognizer tracks the center-point between a number of touches, 
+and reports any changes through the x and y properties of the `translation` 
+property of the gesture recognizer. By default, pan is a one-touch
+gesture recognizer, though that can be changed by specifying the
+`numberOfRequiredTouches` property through `panOptions` hash.
+
+<div id="demobox" class="clearfix">
+  <div id="code">
+    <javascript>
+      MyApp.PanableView = SC.View.extend({
+        panOptions: {
+          numberOfRequiredTouches: 2
+        },
+
+        panChange: function(recognizer) {
+          var val = recognizer.get('translation');
+        
+          this.$().css({
+            translateX: '+=%@'+val.x,
+            translateY: '+=%@'+val.y
+          });
+        }
+      });
+    </javascript>
+  </div>
+  <div id="preview">
+    <iframe class="video" src="http://player.vimeo.com/video/28529502?title=0&amp;byline=0&amp;portrait=0" width="220" height="150" frameborder="0"></iframe>
+    <h6>Pan Demo</h6>
+  </div>
+</div>
+
+  ---
+
+#### Tap
+
+SC.TapGestureRecognizer detects a touchstart and touchend and only
+succeeds if the finger does not move beyond a threshold.
+
+<div id="demobox" class="clearfix">
+  <div id="code">
+    <javascript>
+      MyApp.TapableView = SC.View.extend({
+        isZoomedIn: false,
+
+        tapEnd: function() {
+          if (this.get('isZoomedIn')) {
+            this._resetTransforms();
+          }
+          else {
+            this._centerPhoto();
+          }
+        }
+      });
+    </javascript>
+  </div>
+  <div id="preview">
+    <iframe class="video" src="http://player.vimeo.com/video/28529533?title=0&amp;byline=0&amp;portrait=0" width="220" height="150" frameborder="0"></iframe>
+    <h6>Tap Demo</h6>
   </div>
 </div>
 
 ## Overview
 
-  CSS Transforms  were first introduced in WebKit in 2007, and have now 
-reached mass-adoption by all the major browswer vendors. This is great news 
-for web developers, especially in the case of 3D transforms which are
-hardware-accelerated, resulting in extremely smooth animations and
-responsive applications. 
+Gestures coalesce multiple touch events to a single higher-level gesture
+event. For example, a tap gesture recognizer takes information about a
+touchstart event, a few touchmove events, and a touchend event and uses
+some heuristics to decide whether or not that sequence of events qualifies
+as a tap event. If it does, then it will notify the view of the higher-level
+tap events.
 
-  The API for applying transforms however, does not scale to complex applications 
-which require intricate and complex management of transformations. TransformJS
-attempts to identify and address these problems, allowing developers to
-make use of transforms without having to be encumbered by cross browser
-issues, and low-level APIs.
+Gesture events follow the format:
 
-  Here's a snippet of code that uses TransformJS to apply multiple 3d
-transformations to the same element, relative to their current value,
-and animate the changes:
+  * **[GESTURE_NAME]** Start - Sent when a gesture has gathered enough information
+      to begin tracking the gesture
+
+  * **[GESTURE_NAME]** Change - Sent when a gesture has already started and has
+      received touchmove events that cause its state to change
+
+  * **[GESTURE_NAME]** End - Sent when a touchend event is received and the gesture
+      recognizer decides that the gesture is finished.
+
+  * **[GESTURE_NAME]** Cancel - Sent when a touchcancel event is received.
+
+There are two types of gestures: Discrete and Continuous gestures. In contrast
+to continuous gestures, discrete gestures don't have any change events. Rather,
+the end event is the only one that gets sent to the view.
+
+#### Advanced Features
+
+  * **Simultaneous Gesture Recognizers**: SproutCore Touch allows you to
+    define multiple gesture recognizers (pinch/pan/tap) together at the
+    same time, and allows the same gesture recognizers to operate on
+    multiple views at the same time.
+
+  * **Nested Gesture Recognizers**: SproutCore Touch does its best to
+    try to determine how to respond to nested gesture recognizers. The
+    more deeply nested gestures get priority when handling touches.
+
+## Usage
+
+While you wouldn't use SC.Gesture directly, all its subclasses implement the 
+same API. For example, to implement pinch on a view, you implement one or more 
+of the pinch events. For example:
 
   <javascript>
-    $('#test').animate({
-      translateY:'+=150',
-      scale:'+=2',
-      rotateY: '+='+(2*Math.PI),
-      rotateX: '+='+Math.PI,
-      rotateZ: '+='+Math.PI
-    },1500);    
-  </javascript>
+    var myView = SC.View.create({
+      pinchStart: function(recognizer) {
+        this.$().css('background','red');
+      },
 
-## Browser Support
+      pinchChange: function(recognizer) {
+        var scale = recognizer.get('scale');
+        this.$().css('scale',function(index, value) {
+          return recognizer.get('scale') * value
+        });
+      },
 
-  TransformJS supports all major browsers: Safari, Chrome, Firefox,
-Opera, and IE. However, since all browsers don't share the same featureset,
-TransformJS will make its best attempt at using the best feature
-available. The table below outlines which properties are supported on
-which browser. If a browser supports multiple transform styles, 3D
-will be prefered to 2D, and 2D will be prefered to filter transforms.
+      pinchEnd: function(recognizer) {
+        this.$().css('background','blue');
+      },
 
-  <table class="zebra-striped">
-    <thead>
-      <tr>
-        <th></th>
-        <th>3D Support</th>
-        <th>2D Support</th>
-        <th>Filter Support</th>
-      </tr>
-    </thead>
-      <tr>
-        <td>rotateX</td>
-        <td>&#x2714;</td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>rotateY</td>
-        <td>&#x2714;</td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>rotateZ</td>
-        <td>&#x2714;</td>
-        <td>&#x2714;</td>
-        <td>&#x2714;</td>
-      </tr>
-      <tr>
-        <td>translateX</td>
-        <td>&#x2714;</td>
-        <td>&#x2714;</td>
-        <td>&#x2714; *</td>
-      </tr>
-      <tr>
-        <td>translateY</td>
-        <td>&#x2714;</td>
-        <td>&#x2714;</td>
-        <td>&#x2714; *</td>
-      </tr>
-      <tr>
-        <td>translateZ</td>
-        <td>&#x2714;</td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>scale</td>
-        <td>&#x2714;</td>
-        <td>&#x2714;</td>
-        <td>&#x2714;</td>
-      </tr>
-    <tbody>
-
-    </tbody>
-  </table>
-
-\* Since IE does not support translation transformations,
-TransformJS will instead apply them to the `top` and `left` properties
-which means the element must have `position: absolute` set.
-
-
-## The Problems
-
-  The following outlines the problems that TransformJS tries to solve,
-and outlines the ways in which it solves them. 
-
-#### Cross Browser Support
-
-  Transforms have yet to be adopted by all the major browser vendors as
-non-proprietary CSS properties. Therefore, to apply a 10x10 pixel translation 
-to an element involves setting 5 properties: 
-    
-  <javascript>
-    $('#test').css({
-      '-webkit-transform': 'translate(10px,10px)',
-      '-moz-transform': 'translate(10px,10px)',
-      '-o-transform': 'translate(10px,10px)',
-      '-ms-transform': 'translate(10px,10px)',
-      'transform': 'translate(10px,10px)'
+      pinchCancel: function(recognizer) {
+        this.$().css('background','blue');
+      }
     });
   </javascript>
 
-  Clearly, setting that property as a string and maintaining it is
-very clumsy, and most people don't even bother with Mozilla, 
-Opera, and IE support.  
+pinchStart(), pinchEnd() and pinchCancel() will only get called once per
+gesture, but pinchChange() will get called repeatedly called every time
+one of the touches moves.
 
-#### Multiple Transforms
+## Customizing Gesture Recognizers
 
-  Setting multiple transforms on the same element involves packing
-multiple transforms to the same CSS property. Once the values you are
-setting to your transforms become dynamic, setting a property begins to
-involve fickle string manipulation:
-  
+Some of the gesture recognizers include properties that can be customized by 
+the user for a specific instance of a view. For example, a pan gesture defaults 
+to being a one-finger gesture, but in some scenarios, it must be defined as a 
+two-finger gesture. In that case, you can override defaults by specifying an 
+Options hash. 
+
   <javascript>
-    $('#test').css({
-      '-webkit-transform': 'translate('+tX+'px,'+tY+'px) scale('+sX+','+sY+')',
-      '-moz-transform': 'translate('+tX+'px,'+tY+'px) scale('+sX+','+sY+')',
-      '-o-transform': 'translate('+tX+'px,'+tY+'px) scale('+sX+','+sY+')',
-      '-ms-transform': 'translate('+tX+'px,'+tY+'px) scale('+sX+','+sY+')',
-      'transform': 'translate('+tX+'px,'+tY+'px) scale('+sX+','+sY+')'
-    });
+    var myView = SC.View.create({
+      panOptions: {
+        numberOfRequiredTouches: 2
+      }
+    });      
   </javascript>
 
-#### Data Consistency
+## Creating Custom Gesture Recognizers
 
-  If multiple classes in your application are affecting the display of
-an element at once, you may run into consistency issues. For example, if
-the animation library is animating the translation in the z-axis, while
-your touch library is updating the translation in the x and y axis, they
-will be overriding the same CSS string and have to write boilerplate to
-ensure there's no jerking.
+SC.Gesture also defines an API which its subclasses can implement to build
+custom gestures. The methods are:
 
-## The Solution
+  * **didBecomePossible** - Called when a gesture enters a possible state. This
+      means the gesture recognizer has accepted enough touches to match 
+      the number of required touches. You would usually initialize your state
+      in this callback.
 
-#### Feature Detection
+  * **eventWasRejected** - Called if a view returns false from a gesture event.
+      This callback allows you to reset internal state if the user rejects
+      an event.
 
-  To solve the cross-browser support problem, TransformJS uses feature 
-detection to analyze the supported features of the browser it is running in 
-and adapts accordingly. For example, if you apply a `rotateY` transform to 
-an element in Safari or Chrome, it will apply it as a 3D-transformation so 
-it can take advantage of hardware-acceleration. However, on Firefox or Opera, 
-it will apply a 2D transformation, and on IE, it will fallback to applying a 
-transformation Filter.
+  * **shouldBegin** - Allows a gesture to block itself from entering a began state.
+      This callback will continuously be called as touches move until it begins.
 
-#### CSS Hooks
+  * **shouldEnd** - Allows a gesture to block itself from entering an ended state.
+      This callback gets called whenever a tracked touch gets a touchEnd event.
 
-  To solve the multiple transforms problem, TransformJS applies a cssHook for 
-every transformation exposing them to `.css()` and `.animate()`. This
-allows you to treat them as separate properties, rather than a single
-one, and also allows you to more easily set a computed value to them.
+  * **didBegin** - Called when the gesture enters a began state. Called before the
+     view receives the Start event.
 
-#### In-Memory Matrix
+  * **didChange** - Called when the gesture enters a began state, and when one of the
+      touches moves. Called before the view receives the Change event.
 
-  To solve the data consistency problem, TransformJS maintains an
-in-memory matrix which it uses to apply the transforms. This
-single-entry system ensures that all parts of your applications that
-want to apply a transformation to an element can do so without any
-regard to what other transformations have already been applied.
+  * **didEnd** - Called when the gesture enters an ended state. Called before the
+     view receives the End event.
+
+  * **didCancel** - Called when the gesture enters a cancelled state. Called before the
+     view receives the Cancel event.
+
+In all the callbacks, you can use the `touches` protected property to access the
+touches hash. The touches hash is keyed on the identifiers of the touches, and the
+values are the jQuery.Event objects. You can also access the length property to inspect 
+how many touches are active, this is mostly useful in shouldBegin since every other 
+callback can assume that there are as many active touches as specified in the 
+numberOfRequiredTouches property.
+
+## Discrete vs Continuous Gestures
+
+There are two main classes of gesture recognizers: Discrete and Continuous 
+gestures. Discrete gestures do not get Start, Change nor Cancel events sent, 
+since they represent a single, instantaneous event, rather than a continuous 
+motion. If you are implementing your own discrete gesture recognizer, you must 
+set the isDiscreteGesture property to yes, and SC.Gesture will adapt its behavior.
+
+Discrete gestures use the shouldEnd callback to either accept or decline the gesture
+event. If it is declined, then the gesture will enter a Cancelled state.
 
 ## License
 
@@ -263,8 +303,6 @@ regard to what other transformations have already been applied.
     THE SOFTWARE.
   </javascript>
     
+  ---
 
-
----
-
-[Back to top](#)
+### [Back to top](#)

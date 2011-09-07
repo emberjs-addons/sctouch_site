@@ -497,7 +497,8 @@ section {
 
 h1 {
   font-size: 60px;
-  padding: 60px 0 20px 0;
+  line-height: 70px;
+  padding: 30px 0 0 0;
   color: #0069D6;
 }
 
@@ -589,4 +590,22 @@ code {
 
 #demobox button {
   width: 100%;
+}
+
+.video {
+  margin: auto;
+}
+
+#toc {
+  font-size:20px;
+  margin:0;
+}
+
+#toc li {
+  list-style: none;
+}
+
+#toc li a {
+  text-decoration: none;
+  line-height:35px;
 }
